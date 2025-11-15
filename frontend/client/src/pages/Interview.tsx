@@ -1,0 +1,633 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  Shield,
+  ChevronDown,
+  ArrowRight,
+  User,
+  Mail,
+  Briefcase,
+  Upload,
+  Mic,
+  StopCircle,
+  RotateCcw,
+  Send,
+  CheckCircle2,
+  Headphones,
+  Loader2,
+} from "lucide-react";
+
+const API_BASE_URL = "http://127.0.0.1:8000/api";
+
+export default function VoxHireApp() {
+  const [showInterview, setShowInterview] = useState(false);
+  const [userDetails, setUserDetails] = useState({
+    name: "",
+    email: "",
+    photo: null as string | null,
+    role: "frontend",
+  });
+  const [sessionId, setSessionId] = useState("");
+
+  const startNewSession = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/start`);
+      const data = await response.json();
+      setSessionId(data.session_id);
+      setShowInterview(true);
+    } catch (error) {
+      console.error("Failed to start session:", error);
+      alert("Failed to connect to backend. Make sure the server is running at http://127.0.0.1:8000");
+    }
+  };
+
+  if (showInterview) {
+    return (
+      <InterviewPage
+        name={userDetails.name}
+        email={userDetails.email}
+        photo={userDetails.photo}
+        role={userDetails.role}
+        sessionId={sessionId}
+        onBack={() => {
+          setShowInterview(false);
+          setSessionId("");
+        }}
+      />
+    );
+  }
+
+  return (
+    <SetupPage
+      userDetails={userDetails}
+      setUserDetails={setUserDetails}
+      onStart={startNewSession}
+    />
+  );
+}
+
+function SetupPage({
+  userDetails,
+  setUserDetails,
+  onStart,
+}: {
+  userDetails: { name: string; email: string; photo: string | null; role: string };
+  setUserDetails: (details: any) => void;
+  onStart: () => void;
+}) {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserDetails({ ...userDetails, photo: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleStartInterview = () => {
+    if (!userDetails.name.trim()) {
+      alert("Please enter your name");
+      return;
+    }
+    if (!userDetails.email.trim()) {
+      alert("Please enter your email");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userDetails.email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+    onStart();
+  };
+
+  const roleLabel = userDetails.role.charAt(0).toUpperCase() + userDetails.role.slice(1).replace(/([A-Z])/g, " $1");
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <header className="sticky top-0 z-20 backdrop-blur bg-neutral-950/90 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 grid place-items-center rounded-md bg-white text-neutral-900 font-semibold">VH</div>
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold">VoxHire</span>
+              <span className="text-xs text-neutral-400">Voice-first interview</span>
+            </div>
+          </div>
+          <nav className="hidden sm:flex items-center gap-6 text-sm">
+            <button className="text-neutral-300 hover:text-white transition-colors">Privacy</button>
+            <button className="text-neutral-300 hover:text-white transition-colors">Help</button>
+          </nav>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Start Your Interview</h1>
+          <p className="text-lg text-neutral-400">Complete your details and select your role to begin</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <section className="rounded-xl border border-white/10 bg-white/5">
+            <div className="p-5 border-b border-white/10">
+              <h2 className="text-xl font-semibold">Your Details</h2>
+              <p className="text-sm text-neutral-400 mt-1">Tell us about yourself</p>
+            </div>
+            <div className="p-5 space-y-5">
+              <div>
+                <label className="block text-sm text-neutral-300 mb-2">Profile Photo (Optional)</label>
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full border-2 border-white/10 bg-neutral-900/60 overflow-hidden flex items-center justify-center">
+                    {userDetails.photo ? (
+                      <img src={userDetails.photo} alt="Profile" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-8 w-8 text-neutral-500" />
+                    )}
+                  </div>
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                    <Upload className="h-4 w-4" />
+                    <span className="text-sm">Upload Photo</span>
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-neutral-300 mb-2">Full Name *</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    value={userDetails.name}
+                    onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+                    placeholder="Enter your full name"
+                    className="w-full bg-neutral-900/60 border border-white/10 rounded-lg text-sm pl-10 pr-3 py-2.5 text-white placeholder:text-neutral-500 outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-neutral-300 mb-2">Email Address *</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                  <input
+                    type="email"
+                    value={userDetails.email}
+                    onChange={(e) => setUserDetails({ ...userDetails, email: e.target.value })}
+                    placeholder="you@example.com"
+                    className="w-full bg-neutral-900/60 border border-white/10 rounded-lg text-sm pl-10 pr-3 py-2.5 text-white placeholder:text-neutral-500 outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-white/10 bg-white/5">
+            <div className="p-5 border-b border-white/10">
+              <h2 className="text-xl font-semibold">Choose Role</h2>
+              <p className="text-sm text-neutral-400 mt-1">Select the position you're applying for</p>
+            </div>
+            <div className="p-5 space-y-5">
+              <div>
+                <label className="block text-sm text-neutral-300 mb-2">Job Role *</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 z-10" />
+                  <select
+                    value={userDetails.role}
+                    onChange={(e) => setUserDetails({ ...userDetails, role: e.target.value })}
+                    className="w-full appearance-none bg-neutral-900/60 border border-white/10 rounded-lg text-sm pl-10 pr-10 py-2.5 text-white outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    <option value="frontend">Front-End Developer</option>
+                    <option value="datascience">Data Scientist</option>
+                    <option value="product">Product Manager</option>
+                    <option value="devops">DevOps Engineer</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-neutral-900/40 p-4">
+                <h3 className="text-sm font-semibold mb-2">{roleLabel}</h3>
+                <p className="text-xs text-neutral-400">
+                  You'll answer AI-generated questions tailored to your role through voice recordings.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-white/10 bg-white/5">
+                <Shield className="h-4 w-4 text-neutral-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-neutral-400">
+                  Your responses are saved to the backend. Speech is transcribed and sent as text.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={handleStartInterview}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg border border-indigo-500/30 bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors shadow-lg shadow-indigo-500/20"
+          >
+            <span>Start Interview</span>
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-12 rounded-xl border border-white/10 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1526925539332-aa3b66e35444?q=80&w=1640&auto=format&fit=crop"
+            alt="Interview"
+            className="w-full h-48 object-cover opacity-80"
+          />
+          <div className="p-6 bg-white/5">
+            <h3 className="text-lg font-semibold">Voice-first, AI-powered</h3>
+            <p className="text-sm text-neutral-400 mt-2">
+              Speak your answer, get AI transcription, and let Synthia ask intelligent follow-ups.
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <footer className="max-w-7xl mx-auto px-6 py-8 border-t border-white/10 text-sm text-neutral-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p>© {new Date().getFullYear()} VoxHire. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <button className="hover:text-neutral-300 transition-colors">Terms</button>
+            <button className="hover:text-neutral-300 transition-colors">Contact</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function InterviewPage({
+  name,
+  email,
+  photo,
+  role,
+  sessionId,
+  onBack,
+}: {
+  name: string;
+  email: string;
+  photo: string | null;
+  role: string;
+  sessionId: string;
+  onBack: () => void;
+}) {
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [isFirstQuestion, setIsFirstQuestion] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusText, setStatusText] = useState("Ready");
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [interviewComplete, setInterviewComplete] = useState(false);
+
+  const recognitionRef = useRef<any>(null);
+  const intervalIdRef = useRef<number | null>(null);
+
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1).replace(/([A-Z])/g, " $1");
+
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Speech recognition not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      setTranscript((prev) => {
+        const newTranscript = prev + finalTranscript;
+        return newTranscript;
+      });
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      if (event.error === 'no-speech') {
+        setStatusText('No speech detected. Please try again.');
+      } else {
+        setStatusText(`Error: ${event.error}`);
+      }
+      stopRecording();
+    };
+
+    recognition.onend = () => {
+      if (isRecording) {
+        setIsRecording(false);
+        setStatusText('Recording stopped');
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    // Get first question on mount
+    getFirstQuestion();
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
+  }, []);
+
+  const getFirstQuestion = () => {
+  setCurrentQuestion("Introduce yourself.");
+  setIsFirstQuestion(true);
+};
+
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const startRecording = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition not available");
+      return;
+    }
+
+    setTranscript("");
+    setTotalSeconds(0);
+    setIsRecording(true);
+    setStatusText("Recording... Speak now");
+    
+    try {
+      recognitionRef.current.start();
+      
+      intervalIdRef.current = window.setInterval(() => {
+        setTotalSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      alert('Failed to start recording. Please try again.');
+      stopRecording();
+    }
+  };
+
+  const stopRecording = () => {
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
+    
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping recognition:', error);
+      }
+    }
+    
+    setIsRecording(false);
+    setStatusText("Recording stopped");
+  };
+
+  const retake = () => {
+    setTranscript("");
+    setTotalSeconds(0);
+    setStatusText("Ready to record");
+    setSubmitted(false);
+  };
+
+  const submitAnswer = async () => {
+    if (!transcript.trim()) {
+      alert("Please record an answer before submitting.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setStatusText("Submitting...");
+
+    try {
+      // Save the current Q&A
+      await fetch(`${API_BASE_URL}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: currentQuestion,
+          answer: transcript,
+          session_id: sessionId
+        })
+      });
+
+      // Get next question
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: transcript,
+          domain: role 
+        })
+      });
+
+      const data = await response.json();
+      
+      // Check if interview is complete (agent might signal this)
+      if (data.question.toLowerCase().includes("thank you") || 
+          data.question.toLowerCase().includes("complete") ||
+          data.question.toLowerCase().includes("finished")) {
+        setInterviewComplete(true);
+        setStatusText("Interview complete!");
+      } else {
+        setCurrentQuestion(data.question);
+        setTranscript("");
+        setTotalSeconds(0);
+        setSubmitted(false);
+        setStatusText("Ready for next question");
+      }
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+      alert('Failed to submit answer. Please try again.');
+      setStatusText("Error submitting");
+    } finally {
+      setIsProcessing(false);
+      setSubmitted(true);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <header className="sticky top-0 z-20 backdrop-blur bg-neutral-950/90 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 grid place-items-center rounded-md bg-white text-neutral-900 font-semibold">VH</div>
+            <div className="flex flex-col">
+              <span className="text-lg font-semibold">VoxHire</span>
+              <span className="text-xs text-neutral-400">Voice-first interview</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3">
+              {photo && <img src={photo} alt={name} className="h-8 w-8 rounded-full object-cover border border-white/10" />}
+              <div className="text-right">
+                <p className="text-sm font-medium">{name}</p>
+                <p className="text-xs text-neutral-400">{email}</p>
+              </div>
+            </div>
+            <button onClick={onBack} className="text-sm text-neutral-300 hover:text-white transition-colors">Exit</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-md bg-indigo-600/20 border border-indigo-500/30 grid place-items-center">
+                <Mic className="h-5 w-5 text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-sm text-neutral-300">{roleLabel}</p>
+                <h2 className="text-lg font-semibold">AI Interview Session</h2>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-neutral-400">{formatTime(totalSeconds)}</p>
+              <p className="text-xs text-neutral-500">Session: {sessionId.slice(0, 8)}...</p>
+            </div>
+          </div>
+        </div>
+
+        {isProcessing && !currentQuestion ? (
+          <div className="rounded-xl border border-white/10 bg-white/5 p-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-400" />
+            <p className="text-neutral-400">Preparing your interview...</p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+              <div className="p-5 border-b border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-1 rounded-full text-xs border border-white/10 bg-white/5">
+                    {isFirstQuestion ? "Introduction" : "Follow-up"}
+                  </span>
+                  <span className="text-xs text-neutral-500">Voice answer</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-semibold">{currentQuestion}</h3>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={startRecording}
+                    disabled={isRecording || submitted || isProcessing}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-500/30 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Mic className="h-4 w-4" />
+                    <span className="text-sm font-medium">Start Recording</span>
+                  </button>
+                  <button
+                    onClick={stopRecording}
+                    disabled={!isRecording}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <StopCircle className="h-4 w-4" />
+                    <span className="text-sm">Stop</span>
+                  </button>
+                  <button
+                    onClick={retake}
+                    disabled={!transcript || isRecording}
+                    className="inline-flex items-center gap-2 px-3 py-2.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    <span className="text-sm">Retake</span>
+                  </button>
+                </div>
+
+                <div className="h-16 rounded-lg border border-white/10 bg-neutral-950/60 flex items-center px-3">
+                  <div className="flex-1 flex items-end gap-1 h-12">
+                    {[...Array(10)].map((_, i) => (
+                      <span
+                        key={i}
+                        className={`w-1.5 rounded ${isRecording ? "bg-indigo-500/60 animate-pulse" : "bg-indigo-500/20"}`}
+                        style={{ height: `${20 + Math.random() * 60}%`, animationDelay: `${i * 100}ms` }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-neutral-400 ml-3">{statusText}</span>
+                </div>
+
+                {transcript && (
+                  <div className="rounded-lg border border-white/10 bg-neutral-950/60 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Headphones className="h-4 w-4 text-neutral-300" />
+                        <span className="text-sm text-neutral-300">Transcription</span>
+                      </div>
+                      <span className="text-xs text-neutral-500">{transcript.split(' ').length} words</span>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto text-sm text-neutral-200 leading-relaxed">
+                      {transcript}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={submitAnswer}
+                    disabled={!transcript || submitted || isProcessing || isRecording}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isProcessing ? "Processing..." : "Submit Answer"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {interviewComplete && (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-md bg-emerald-600/20 border border-emerald-500/30 grid place-items-center">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold">Interview Complete</h4>
+                    <p className="text-sm text-neutral-400 mt-1">
+                      Thank you, {name}! Your responses have been saved. Check interview_log.csv for the full transcript.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
