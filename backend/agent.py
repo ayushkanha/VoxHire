@@ -72,7 +72,6 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}"),
 ])
 
-
 agent = prompt.partial(system_prompt=SYSTEM_PROMPT) | llm
 
 # Wrap with memory/history
