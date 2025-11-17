@@ -6,7 +6,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import re
 credentials_json = os.getenv("google_credentials_json")
-
 if not credentials_json:
     raise ValueError("Environment variable 'google_credentials_json' is missing!")
 

@@ -21,7 +21,7 @@ import {
   FileText,
 } from "lucide-react";
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "https://voxhire.onrender.com/api";
 const formatMarkdown = (text: string): string => {
   return text
     .replace(/##\s*/g, "\n\n## ")        
@@ -48,6 +48,7 @@ export default function Results({
   photo,
   role,
   totalQuestions,
+  suspiciousActivities,
 }: {
   sessionId: string;
   onBack: () => void;
@@ -56,6 +57,7 @@ export default function Results({
   photo: string | null;
   role: string;
   totalQuestions: number;
+  suspiciousActivities:number;
 }) {
   const [result, setResult] = useState<InterviewResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);

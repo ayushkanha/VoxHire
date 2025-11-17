@@ -13,8 +13,22 @@ import {
   Headphones,
   ClipboardCheck,
 } from "lucide-react";
+import { useEffect } from "react";
 
 export default function Home() {
+  useEffect(() => {
+    fetch("https://voxhire.onrender.com/api/check")
+      .then((response) => {
+        if (response.ok) {
+          console.log("Backend is running.");
+        } else {
+          console.error("Backend check failed.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking backend:", error);
+      });
+  }, []);
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Decorative background */}
